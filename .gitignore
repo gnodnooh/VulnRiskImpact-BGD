@@ -1,6 +1,9 @@
 # Ignore Mac system files
 .DS_store
 
-# Ignore folder
+# Ignore specific folders
+data
 references
 paper
+
+
