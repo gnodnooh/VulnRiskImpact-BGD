@@ -1,5 +1,7 @@
 # Ignore Mac system files
 .DS_store
+.ipynb_checkpoints
+__pychache__
 
 # Ignore specific folders
 data
