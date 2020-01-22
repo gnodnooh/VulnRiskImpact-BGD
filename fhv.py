@@ -105,13 +105,14 @@ def ReprojectRaster(inpath, outpath, new_crs):
 
     
     
-def ReprojectToReference(in_path, ref_path, out_path, out_dtype):
+def ReprojectToReference(in_path, ref_path, out_path, out_dtype, out_nodata=None):
     """Reproject a raster to reference raster
     """
     with rasterio.open(ref_path) as ref:
         profile = ref.profile.copy()
         profile.update(
             dtype=out_dtype,
+            nodata=out_nodata,
             compress='lzw')
         with rasterio.open(in_path) as src:
             with rasterio.open(out_path, 'w', **profile) as dst:
