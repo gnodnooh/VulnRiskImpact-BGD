@@ -2,6 +2,9 @@
 .DS_store
 .ipynb_checkpoints
 __pychache__
+*.pyo
+*.pyc
+
 
 # Ignore specific folders
 data
