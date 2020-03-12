@@ -308,11 +308,11 @@ def affectedGdpFlood(gdp, fdep):
     
     
 ### Functions for Bangladesh ===================================== ###
-def bbsCensus(fn):
+def LoadCensusINEI(fn_census):
     '''
-    From BBS Census 2011 Excel data to Pandas Dataframe
+    Read BBS 2011 National Census data (Excel) as Pandas dataframe format.
     '''
-    xl = pd.ExcelFile(fn)
+    xl = pd.ExcelFile(fn_census)
     df = xl.parse('Output')
     code = df['Code'].values.astype(int)[:,None]
     df = df.drop(['Code', 'Upazila/Thana Name'], axis=1)
