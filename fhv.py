@@ -308,16 +308,19 @@ def affectedGdpFlood(gdp, fdep):
     
     
 ### Functions for Bangladesh ===================================== ###
-def LoadCensusINEI(fn_census):
+def LoadCensusBBS(fn_census):
     '''
     Read BBS 2011 National Census data (Excel) as Pandas dataframe format.
     '''
-    xl = pd.ExcelFile(fn_census)
-    df = xl.parse('Output')
-    code = df['Code'].values.astype(int)[:,None]
-    df = df.drop(['Code', 'Upazila/Thana Name'], axis=1)
+    remove = ['Unnamed: 0','Upazila/Thana Name']
+    df = pd.read_excel(fn_census,
+                       skiprows=9,
+                       header=0,
+                       index_col=0,
+                       skipfooter=4,
+                       usecols=lambda x: x not in remove)
     
-    return code, df
+    return df
 
 
 def make_raster(in_ds, fn, data, data_type, nodata=None):
