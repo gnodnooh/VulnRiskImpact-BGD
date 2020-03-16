@@ -7,7 +7,7 @@
     - ReprojectRaster(inpath, outpath, new_crs)
     - CropRasterShape(rst_fn, shp_fn, out_fn, all_touched=False)
 
-    Revised at Jan-20-2020
+    Revised at Mar-15-2020
     Donghoon Lee (dlee298@wisc.edu)
 """
 import os
@@ -282,9 +282,6 @@ def zeroToOne(array):
     return array
 
 
-
-    
-
 def affectedGdpFlood(gdp, fdep):
     '''
     Calculated total affected GDP by flood levels
@@ -301,13 +298,7 @@ def affectedGdpFlood(gdp, fdep):
     
 
 
-    
-    
-    
-    
-    
-    
-### Functions for Bangladesh ===================================== ###
+
 def LoadCensusBBS(fn_census):
     '''
     Read BBS 2011 National Census data (Excel) as Pandas dataframe format.
