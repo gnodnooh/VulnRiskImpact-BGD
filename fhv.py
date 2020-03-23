@@ -378,6 +378,42 @@ def LoadCensusBBS(fn_census):
     return df
 
 
+def LoadUnionAge5(fn):
+    '''
+    Reads BBS 2011 Census - Union Age5 population data (e.g., age5_Rangpur.xls)
+    
+    Parameters
+    ----------
+    fn: file path
+
+    Return
+    ------
+    df: dataframe
+    
+    Donghoon @ Mar-22-2019
+    '''
+    df = pd.read_excel(fn,               
+                       skiprows=11,
+                       header=[0],
+                       index_col=[0,1],
+                       skipfooter=4)
+    df = df.droplevel(level=0)
+    df.columns = ['Age5', 'Male', 'Female', 'Total']
+    # Remove Union Total rows
+    df = df[~((df['Male'] == 'Male') & (df['Female'] == 'Female') & (df['Total'] == 'Total'))]
+    # Set MultiIndex
+    df.reset_index(inplace=True)
+    df = df.set_index(['Union','Age5'])
+    # Rename Age 5 years group
+    idxLv1 = ['00-04','05-09','10-14','15-19','20-24','25-29','30-34','35-39','40-44','45-49','50-54','55-59','60-64','65-69','70-74','75-79','80+','Total']
+    df.index = df.index.set_levels(idxLv1, level=1)
+    # Drop the division 'Total' rows
+    df = df.drop('Total',level=0)
+    # Reset index
+    df = df.reset_index()
+    return df
+
+
 def make_raster(in_ds, fn, data, data_type, nodata=None):
     """Create a one-band GeoTiff.
 
