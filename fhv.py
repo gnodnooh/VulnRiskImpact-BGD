@@ -7,7 +7,7 @@
     - ReprojectRaster(inpath, outpath, new_crs)
     - CropRasterShape(rst_fn, shp_fn, out_fn, all_touched=False)
 
-    Revised at Mar-15-2020
+    Revised at Apr-14-2020
     Donghoon Lee (dlee298@wisc.edu)
 """
 import os
@@ -362,7 +362,7 @@ def affectedGdpFlood(gdp, fdep):
     
 
 
-
+##### CODE FOR BANGLADESH WORK #####
 def LoadCensusBBS(fn_census):
     '''
     Read BBS 2011 National Census data (Excel) as Pandas dataframe format.
@@ -506,18 +506,3 @@ def climInterpolate(clim, code4):
 # 
 #     return imap    
 # =============================================================================
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
