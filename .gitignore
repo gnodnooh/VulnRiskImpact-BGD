@@ -4,7 +4,7 @@
 __pychache__
 *.pyo
 *.pyc
-
+removable.ipynb
 
 # Ignore specific folders
 data
