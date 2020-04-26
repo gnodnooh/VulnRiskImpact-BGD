@@ -34,7 +34,8 @@ import copy
 
 class SPSS_PCA:
     '''
-    Source: https://github.com/geoss/sovi-validity
+    
+    *** This code is adapted from https://github.com/geoss/sovi-validity ***
     
     A class that integrates most (all?) of the assumptions SPSS imbeds in their
     implimnetation of principle components analysis (PCA), which can be found in
@@ -69,34 +70,34 @@ class SPSS_PCA:
 
     Attributes
     ----------
-    z_inputs:	numpy array
+    z_inputs:   numpy array
                 z-scores of the input array.
-    comp_mat:	numpy array
+    comp_mat:   numpy array
                 Component matrix (a.k.a, "loadings").
-    scores:		numpy array
+    scores:     numpy array
                 New uncorrelated vectors associated with each observation.
-    eigenvals_all:	numpy array
+    eigenvals_all:  numpy array
                 Eigenvalues associated with each factor.
-    eigenvals:	numpy array
+    eigenvals:  numpy array
                 Subset of eigenvalues_all reflecting only those that meet the 
                 criterion defined by parameters reduce and min_eig.
     weights:    numpy array
                 Values applied to the input data (after z-scores) to get the PCA
                 scores. "Component score coefficient matrix" in SPSS or  
                 "projection matrix" in the MDP library.
-    comms: 		numpy array			
+    comms:      numpy array
                 Communalities
     sum_sq_load: numpy array
                  Sum of squared loadings.
     comp_mat_rot: numpy array or None
                   Component matrix after rotation. Ordered from highest to lowest 
                   variance explained based on sum_sq_load_rot. None if varimax=False.
-    scores_rot:	numpy array or None
+    scores_rot: numpy array or None
                 Uncorrelated vectors associated with each observation, after 
                 rotation. None if varimax=False.
     weights_rot: numpy array or None
                 Rotated values applied to the input data (after z-scores) to get 
-                the PCA	scores. None if varimax=False.
+                the PCA scores. None if varimax=False.
     sum_sq_load_rot: numpy array or None
                  Sum of squared loadings for rotated results. None if 
                  varimax=False.
@@ -106,57 +107,62 @@ class SPSS_PCA:
     def __init__(self, inputs, reduce=False, min_eig=1.0, varimax=False):
         z_inputs = ZSCORE(inputs)  # seems necessary for SPSS "correlation matrix" setting (their default)
 
-        # run base SPSS-style PCA to get all eigenvalues
-        pca_node = MDP.nodes.WhiteningNode()  # settings for the PCA
-        scores = pca_node.execute(z_inputs)  # base run PCA 
-        eigenvalues_all = pca_node.d   # rename PCA results
+        # Run base SPSS-style PCA to get all eigenvalues
+#         pca_node = MDP.nodes.PCANode()
+        pca_node = MDP.nodes.WhiteningNode()  # Whitening mode
+        scores = pca_node.execute(z_inputs)   # Base-run PCA 
+        eigenvalues_all = pca_node.d          # Eigenvalues of the base-run
 
         # run SPSS-style PCA based on user settings
-        pca_node = MDP.nodes.WhiteningNode(reduce=reduce, var_abs=min_eig)  # settings for the PCA
-        scores = pca_node.execute(z_inputs)  # run PCA  (these have mean=0, std_dev=1)
-        weights = pca_node.v  # rename PCA results (these might be a transformation of the eigenvectors)
-        eigenvalues = pca_node.d   # rename PCA results
-        component_matrix = weights * eigenvalues  # compute the loadings 
-        component_matrix = self._reflect(component_matrix)   # get signs to match SPSS
-        communalities = (component_matrix**2).sum(1)   # compute the communalities
-        sum_sq_loadings = (component_matrix**2).sum(0) # note that this is the same as eigenvalues 
-        weights_reflected = component_matrix/eigenvalues  # get signs to match SPSS
-        scores_reflected = np.dot(z_inputs, weights_reflected)  # note that abs(scores)=abs(scores_reflected)
+#         pca_node = MDP.nodes.PCANode(reduce=reduce, var_abs=min_eig)
+        pca_node = MDP.nodes.WhiteningNode(reduce=reduce, var_abs=min_eig) # Retain only eigenvalue > min_eig
+        scores = pca_node.execute(z_inputs)   # Principal components
+        weights = pca_node.v                  # Transposed eigenvectors
+        eigenvalues = pca_node.d              # Eigenvalues
+        # *Component matrix (equal to correlation between X and PC)
+        # *Component loadings = Eigenvector * np.sqrt(eigenvalue)
+        # *The component loading is interpreted as the correlation of each item (x) with the PC.
+        component_matrix = weights * eigenvalues  
+        component_matrix = self._reflect(component_matrix)   # Get signs to match SPSS
+        # *Summing the squared component loadings across the components (columns) 
+        # *Communality is the variance in observed variables accounted for by a common factors. 
+        communalities = (component_matrix**2).sum(1)         # Communalities (h**2, if full factors, 1)
+        # Summing each squared loading down the items (rows) gives the eigenvalue.
+        sum_sq_loadings = (component_matrix**2).sum(0)       # Same as eigenvalues 
+        weights_reflected = component_matrix/eigenvalues     # Get signs to match SPSS
+        scores_reflected = np.dot(z_inputs, weights_reflected)  # abs(scores)=abs(scores_reflected)
 
         if varimax:
-            # SPSS-style varimax rotation prep
-            c_normalizer = 1. / MDP.numx.sqrt(communalities)  # used to normalize inputs to varimax
-            c_normalizer.shape = (component_matrix.shape[0],1)  # reshape to vectorize normalization
-            cm_normalized = c_normalizer * component_matrix  # normalize component matrix for varimax
+            # SPSS-style varimax rotation prep (Scaling)
+            c_normalizer = 1. / MDP.numx.sqrt(communalities)[:,None]    # Scaler
+            cm_normalized = c_normalizer * component_matrix  # Normalized component matrix for varimax
 
-            # varimax rotation
-            cm_normalized_varimax = self._varimax(cm_normalized)  # run varimax
-            c_normalizer2 = MDP.numx.sqrt(communalities)  # used to denormalize varimax output
-            c_normalizer2.shape = (component_matrix.shape[0],1)  # reshape to vectorize denormalization
-            cm_varimax = c_normalizer2 * cm_normalized_varimax  # denormalize varimax output
+            # Varimax rotation
+            cm_normalized_varimax = self._varimax(cm_normalized)  # Run varimax
+            c_normalizer2 = MDP.numx.sqrt(communalities)[:,None]
+            cm_varimax = c_normalizer2 * cm_normalized_varimax    # Denormalized varimax output
 
-            # reorder varimax component matrix
-            sorter = (cm_varimax**2).sum(0)  # base the ordering on sum of squared loadings
-            sorter = zip(sorter.tolist(), range(sorter.shape[0]))  # add index to denote current order
-            sorter = sorted(sorter, key=itemgetter(0), reverse=True)  # sort from largest to smallest
-            sum_sq_loadings_varimax, reorderer = zip(*sorter)  # unzip the sorted list
-            sum_sq_loadings_varimax = np.array(sum_sq_loadings_varimax)  # convert to array
-            cm_varimax = cm_varimax[:,reorderer]  # reorder component matrix
+            # Reorder varimax component matrix
+            order = np.argsort(-np.sum(cm_varimax**2, 0))         # Sort by sum of squared loadings
+            sum_sq_loadings_varimax = np.sum(cm_varimax**2, 0)[order]
+            cm_varimax = cm_varimax[:,order]
 
-            # varimax scores
-            cm_varimax_reflected = self._reflect(cm_varimax)  # get signs to match SPSS
+            # Varimax scores
+            cm_varimax_reflected = self._reflect(cm_varimax)  # Get signs to match SPSS
             varimax_weights = np.dot(cm_varimax_reflected, 
                               np.linalg.inv(np.dot(cm_varimax_reflected.T,
                               cm_varimax_reflected))) # CM(CM'CM)^-1
-            scores_varimax = np.dot(z_inputs, varimax_weights)
+            scores_varimax = np.dot(z_inputs, varimax_weights)   # Principal components by Varimax
         else:
             comp_mat_rot = None
             scores_rot = None
             weights_rot = None
             cm_varimax_reflected = None
             scores_varimax = None
+            varimax_weights = None
+            sum_sq_loadings_varimax = None
 
-        # assign output variables
+        # Assign output variables
         self.z_inputs = z_inputs
         self.scores = scores_reflected
         self.comp_mat = component_matrix
@@ -171,7 +177,7 @@ class SPSS_PCA:
         self.sum_sq_load_rot = sum_sq_loadings_varimax
 
     def _reflect(self, cm):
-        # reflect factors with negative sums; SPSS default
+        # Reflect factors with negative sums; SPSS default
         cm = copy.deepcopy(cm)
         reflector = cm.sum(0)
         for column, measure in enumerate(reflector):
