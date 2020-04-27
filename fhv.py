@@ -162,7 +162,7 @@ class SPSS_PCA:
             varimax_weights = None
             sum_sq_loadings_varimax = None
 
-        # Assign output variables
+        # Assign basic variables
         self.z_inputs = z_inputs
         self.scores = scores_reflected
         self.comp_mat = component_matrix
@@ -171,6 +171,7 @@ class SPSS_PCA:
         self.weights = weights_reflected
         self.comms = communalities
         self.sum_sq_load = sum_sq_loadings
+        # Assign Varimax variables
         self.comp_mat_rot = cm_varimax_reflected
         self.scores_rot = scores_varimax
         self.weights_rot = varimax_weights
