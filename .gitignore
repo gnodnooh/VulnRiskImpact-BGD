@@ -8,7 +8,11 @@ removable.ipynb
 
 # Ignore specific folders
 data
+data_zenodo
 references
 paper
 
-
+# Ignore specific files
+FIP_*.ipynb
+compRisk*.py
+loadCensus.py
