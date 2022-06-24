@@ -13,7 +13,9 @@ references
 paper
 
 # Ignore specific files
+99_*.ipynb
 fv.py
+fhv.py
 FIP_*.ipynb
 compRisk*.py
 loadCensus.py
